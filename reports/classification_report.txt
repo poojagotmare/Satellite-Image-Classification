@@ -1,0 +1,12 @@
+Test Set Accuracy: 90.61%
+
+              precision    recall  f1-score   support
+
+      cloudy     0.9348    0.9348    0.9348       138
+      desert     0.9339    0.9417    0.9378       120
+  green_area     0.8400    0.9600    0.8960       175
+       water     0.9459    0.8046    0.8696       174
+
+    accuracy                         0.9061       607
+   macro avg     0.9137    0.9103    0.9095       607
+weighted avg     0.9105    0.9061    0.9055       607
