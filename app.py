@@ -385,16 +385,22 @@ with tab_demo:
         selected_image = None
         image_source_label = ""
 
-        # Initialize session state for quick buttons
-        if "active_preset" not in st.session_state:
-            st.session_state.active_preset = 0
+        # Safe session state retrieval
+        try:
+            active_idx = st.session_state.get("active_preset", 0)
+        except Exception:
+            active_idx = 0
 
         for i, preset in enumerate(PRESET_TEST_CASES):
             with btn_cols[i]:
                 if st.button(preset["label"], use_container_width=True):
-                    st.session_state.active_preset = i
+                    active_idx = i
+                    try:
+                        st.session_state["active_preset"] = i
+                    except Exception:
+                        pass
 
-        preset_info = PRESET_TEST_CASES[st.session_state.active_preset]
+        preset_info = PRESET_TEST_CASES[active_idx]
         preset_path = os.path.join("data", preset_info["class"], preset_info["file"])
 
         col_left, col_right = st.columns([1.1, 1.25], gap="large")
