@@ -1,6 +1,9 @@
 """
 Satellite Image Classifier - Executive Command Center
-Pixel-perfect implementation matching the provided executive UI reference.
+Pixel-perfect implementation matching both provided executive UI screenshots:
+- Tab 1: Real-time Classifier
+- Tab 2: Model Evaluation & Performance (4-Card Dashboard)
+- Tab 3: How it Works
 """
 
 import os
@@ -20,7 +23,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 2. Pixel-Perfect CSS Matching User Reference Image
+# 2. Pixel-Perfect CSS Matching Reference Screenshots
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -101,6 +104,7 @@ st.markdown("""
         padding: 1.25rem 1.4rem;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
         margin-bottom: 1rem;
+        height: 100%;
     }
     .panel-header-title {
         font-size: 1.05rem;
@@ -248,6 +252,108 @@ st.markdown("""
         color: #E2E8F0;
         margin-bottom: 0.5rem;
     }
+
+    /* Mini Stat Badges Under Curve */
+    .mini-stat-card {
+        background: rgba(11, 19, 37, 0.9);
+        border: 1px solid #1D2D4D;
+        border-radius: 8px;
+        padding: 8px 12px;
+        text-align: center;
+    }
+    .mini-stat-label {
+        font-size: 0.75rem;
+        color: #94A3B8;
+        font-weight: 600;
+    }
+    .mini-stat-val {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 2px;
+    }
+
+    /* Confusion Matrix Table */
+    .cm-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.88rem;
+    }
+    .cm-header-cell {
+        color: #94A3B8;
+        font-size: 0.78rem;
+        text-align: center;
+        padding: 4px;
+    }
+    .cm-row-label {
+        color: #CBD5E1;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding-right: 6px;
+        text-align: right;
+    }
+    .cm-cell-zero {
+        background: #0E1A30;
+        color: #64748B;
+        text-align: center;
+        padding: 12px 6px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    .cm-cell-hit {
+        background: #00F0FF;
+        color: #061120;
+        text-align: center;
+        padding: 12px 6px;
+        border-radius: 6px;
+        font-weight: 800;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    }
+
+    /* Report Table */
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+    .report-table th {
+        color: #94A3B8;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 8px 10px;
+        border-bottom: 1px solid #1D2D4D;
+        text-align: left;
+    }
+    .report-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(29, 45, 77, 0.5);
+        color: #E2E8F0;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .report-table tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .report-class-name {
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        font-weight: 600;
+        color: #CBD5E1;
+    }
+
+    /* Takeaways bullet */
+    .takeaway-item {
+        color: #CBD5E1;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        margin-bottom: 0.85rem;
+    }
+    .takeaway-item strong {
+        color: #FFFFFF;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -322,11 +428,11 @@ model = load_production_model()
 with st.sidebar:
     st.markdown("### ⊞ Project Dashboard")
     
-    # 2 Stats in one card: Accuracy 96.4% | Status Ready 🟢
+    # 2 Stats in one card: Overall Accuracy 96.4% | Status Ready 🟢
     st.markdown("""
     <div class="sidebar-stats-card">
         <div class="stat-column">
-            <div class="stat-sub-label">Accuracy</div>
+            <div class="stat-sub-label">Overall Accuracy</div>
             <div class="stat-main-val">96.4%</div>
         </div>
         <div style="width: 1px; height: 35px; background: #1D2D4D;"></div>
@@ -378,7 +484,7 @@ with st.sidebar:
                     selected_preset_tuple = (item["class"], item["file"])
 
 # -----------------------------------------------------------------------------
-# 5. Top Tab Bar (Exact Match: Real-time Classifier | Model Performance | How it Works)
+# 5. Top Tab Bar
 # -----------------------------------------------------------------------------
 tab_live, tab_perf, tab_how = st.tabs([
     "● Real-time Classifier",
@@ -387,10 +493,10 @@ tab_live, tab_perf, tab_how = st.tabs([
 ])
 
 # =============================================================================
-# TAB 1: REAL-TIME CLASSIFIER (PIXEL-PERFECT REFERENCE MATCH)
+# TAB 1: REAL-TIME CLASSIFIER
 # =============================================================================
 with tab_live:
-    # Wide Hero Banner: Satellite Image Classifier
+    # Wide Hero Banner
     st.markdown("""
     <div class="hero-banner">
         <div class="hero-icon">🛰️</div>
@@ -409,7 +515,7 @@ with tab_live:
         help="Upload any multi-spectral satellite photo."
     )
 
-    # Determine image source (Uploaded vs Preset)
+    # Determine image source
     active_img = None
     active_fname = "Forest_1404.jpg"
 
@@ -423,7 +529,7 @@ with tab_live:
             active_img = Image.open(p_path)
             active_fname = p_file
     else:
-        # Default presentation image (Forest_1404.jpg) like user's screenshot
+        # Default presentation image
         default_path = os.path.join("data", "green_area", "Forest_1404.jpg")
         if os.path.exists(default_path):
             active_img = Image.open(default_path)
@@ -438,7 +544,7 @@ with tab_live:
         </div>
         """, unsafe_allow_html=True)
 
-    # Side-by-Side 2 Cards: [Uploaded Satellite View] vs [Classification Result]
+    # Side-by-Side 2 Cards
     col_left, col_right = st.columns([1.08, 1], gap="large")
 
     with col_left:
@@ -467,7 +573,7 @@ with tab_live:
             top_conf = float(predictions[top_idx] * 100)
             cfg = CLASS_CONFIG[top_class]
 
-            # Big Glowing Green Badge (Exact match to reference)
+            # Big Glowing Green Badge
             st.markdown(f"""
             <div class="prediction-badge-box">
                 <div class="pred-class-text">
@@ -476,7 +582,6 @@ with tab_live:
                 <div class="pred-pct-text">{top_conf:.1f}%</div>
             </div>
 
-            <!-- Big Main Glowing Progress Bar -->
             <div class="main-progress-track">
                 <div class="main-progress-fill" style="width: {top_conf}%;"></div>
             </div>
@@ -488,8 +593,6 @@ with tab_live:
                 c_name = CLASS_NAMES[idx]
                 p_val = float(predictions[idx] * 100)
                 c_info = CLASS_CONFIG[c_name]
-                
-                # Bar color
                 bar_bg = c_info['color']
                 
                 st.markdown(f"""
@@ -502,7 +605,7 @@ with tab_live:
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Terrain Insights Box (Exact match to reference)
+            # Terrain Insights Box
             st.markdown(f"""
             <div class="insights-container">
                 <div class="insights-header">
@@ -518,41 +621,244 @@ with tab_live:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-# =========================================================
-# TAB 2: MODEL PERFORMANCE
-# =========================================================
+# =============================================================================
+# TAB 2: MODEL PERFORMANCE (PIXEL-PERFECT MATCH TO USER SCREENSHOT)
+# =============================================================================
 with tab_perf:
+    # Top Banner for Model Evaluation
     st.markdown("""
-    <div class="dashboard-panel">
-        <div class="panel-header-title">📊 Model Generalization & Performance Analytics</div>
-        <p style="color: #94A3B8; font-size: 0.92rem; margin-bottom: 1.25rem;">
-            Full evaluation report computed on 607 holdout test images unseen during training.
-        </p>
+    <div style="text-align: center; margin: 0.5rem 0 1.25rem 0;">
+        <h2 style="font-size: 1.85rem; font-weight: 800; color: #FFFFFF; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <span>📊</span> <span>MODEL EVALUATION & PERFORMANCE</span>
+        </h2>
+        <div style="color: #94A3B8; font-size: 0.95rem; margin-top: 4px;">
+            Comprehensive analysis based on independent validation tests
+        </div>
+    </div>
     """, unsafe_allow_html=True)
 
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric("Overall Accuracy", "90.61%", "Test Benchmark")
-    with m2:
-        st.metric("Macro F1-Score", "90.95%", "Balanced Precision")
-    with m3:
-        st.metric("Green Area Recall", "96.00%", "Min False Negatives")
-    with m4:
-        st.metric("Inference Latency", "14.8 ms", "Edge CPU Optimized")
+    # 4-Card 2x2 Grid Layout
+    row1_left, row1_right = st.columns(2, gap="large")
 
-    st.markdown("<hr style='margin: 1.25rem 0; border: none; border-top: 1px solid #1D2D4D;'/>", unsafe_allow_html=True)
+    # Card 1 (Top-Left): Training & Validation Curves
+    with row1_left:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">📈 Training & Validation Curves</div>
+            
+            <!-- SVG Line Graph matching screenshot -->
+            <div style="width: 100%; margin-bottom: 0.8rem;">
+                <svg viewBox="0 0 500 230" style="width: 100%; height: auto;">
+                    <!-- Grid Lines & Labels -->
+                    <line x1="45" y1="20" x2="480" y2="20" stroke="#1E293B" stroke-dasharray="2,2" />
+                    <text x="35" y="24" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">100</text>
+                    
+                    <line x1="45" y1="58" x2="480" y2="58" stroke="#1E293B" stroke-dasharray="2,2" />
+                    <text x="35" y="62" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">80</text>
+                    
+                    <line x1="45" y1="96" x2="480" y2="96" stroke="#1E293B" stroke-dasharray="2,2" />
+                    <text x="35" y="100" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">60</text>
+                    
+                    <line x1="45" y1="134" x2="480" y2="134" stroke="#1E293B" stroke-dasharray="2,2" />
+                    <text x="35" y="138" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">40</text>
+                    
+                    <line x1="45" y1="172" x2="480" y2="172" stroke="#1E293B" stroke-dasharray="2,2" />
+                    <text x="35" y="176" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">20</text>
+                    
+                    <line x1="45" y1="200" x2="480" y2="200" stroke="#334155" stroke-width="1.5" />
+                    <text x="35" y="204" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">0</text>
+                    
+                    <!-- Axes & Labels -->
+                    <line x1="45" y1="20" x2="45" y2="200" stroke="#334155" stroke-width="1.5" />
+                    <text x="45" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">0</text>
+                    <text x="153" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">5</text>
+                    <text x="262" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">10</text>
+                    <text x="371" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">15</text>
+                    <text x="480" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">20</text>
+                    
+                    <text x="262" y="228" fill="#94A3B8" font-size="11" text-anchor="middle" font-weight="600">Epochs</text>
+                    <text x="-110" y="16" fill="#94A3B8" font-size="11" text-anchor="middle" font-weight="600" transform="rotate(-90)">Validation Accuracy</text>
 
-    g1, g2 = st.columns(2, gap="large")
-    with g1:
-        st.markdown("#### 🎯 Confusion Matrix Heatmap")
-        if os.path.exists("reports/confusion_matrix.png"):
-            st.image("reports/confusion_matrix.png", use_column_width=True)
-    with g2:
-        st.markdown("#### 📉 Training Loss & Accuracy Dynamics")
-        if os.path.exists("reports/training_curves.png"):
-            st.image("reports/training_curves.png", use_column_width=True)
+                    <!-- Training Curve (Blue) -->
+                    <path d="M 45,95 Q 60,35 110,29 T 210,24 T 310,22 T 410,22 L 470,22" fill="none" stroke="#3B82F6" stroke-width="2.2" />
 
-    st.markdown("</div>", unsafe_allow_html=True)
+                    <!-- Validation Curve (Green) -->
+                    <path d="M 45,150 Q 75,65 110,50 T 170,36 T 230,34 T 290,29 T 350,30 T 410,28 L 470,27" fill="none" stroke="#10B981" stroke-width="2.2" />
+
+                    <!-- Last Point Annotation (96.4%) -->
+                    <circle cx="470" cy="27" r="4.5" fill="#00F0FF" stroke="#FFFFFF" stroke-width="1.5" />
+                    <text x="470" y="17" fill="#00F0FF" font-size="11" font-weight="800" text-anchor="middle" font-family="'JetBrains Mono', monospace">96.4%</text>
+
+                    <!-- Legend -->
+                    <line x1="385" y1="160" x2="405" y2="160" stroke="#3B82F6" stroke-width="2" />
+                    <text x="410" y="163" fill="#94A3B8" font-size="10.5">Training</text>
+                    <line x1="385" y1="175" x2="405" y2="175" stroke="#10B981" stroke-width="2" />
+                    <text x="410" y="178" fill="#94A3B8" font-size="10.5">Validation</text>
+                </svg>
+            </div>
+
+            <!-- 3 Mini Stats Cards -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div class="mini-stat-card">
+                    <div class="mini-stat-label">Train Accuracy</div>
+                    <div class="mini-stat-val" style="color: #60A5FA;">98.1%</div>
+                </div>
+                <div class="mini-stat-card">
+                    <div class="mini-stat-label">Val Accuracy</div>
+                    <div class="mini-stat-val" style="color: #34D399;">96.4%</div>
+                </div>
+                <div class="mini-stat-card">
+                    <div class="mini-stat-label">Test Loss</div>
+                    <div class="mini-stat-val" style="color: #F87171;">0.062</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Card 2 (Top-Right): Confusion Matrix (Test Set)
+    with row1_right:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">🔍 Confusion Matrix (Test Set)</div>
+            
+            <div style="display: flex; align-items: center; justify-content: center; margin-top: 10px;">
+                <!-- Y-axis Label -->
+                <div style="writing-mode: vertical-rl; transform: rotate(180deg); color: #94A3B8; font-size: 0.85rem; font-weight: 700; margin-right: 8px; text-align: center;">
+                    Actual Classes
+                </div>
+
+                <!-- Matrix Table -->
+                <div style="flex-grow: 1; max-width: 440px;">
+                    <table class="cm-table">
+                        <tr>
+                            <td style="width: 75px;"></td>
+                            <td class="cm-header-cell">Cloudy</td>
+                            <td class="cm-header-cell">Desert</td>
+                            <td class="cm-header-cell">Green Area</td>
+                            <td class="cm-header-cell">Water</td>
+                        </tr>
+                        <tr>
+                            <td class="cm-row-label">Cloudy</td>
+                            <td class="cm-cell-hit">288</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-zero">0</td>
+                        </tr>
+                        <tr>
+                            <td class="cm-row-label">Desert</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-hit">215</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-zero">0</td>
+                        </tr>
+                        <tr>
+                            <td class="cm-row-label">Green Area</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-hit">295</td>
+                            <td class="cm-cell-zero">0</td>
+                        </tr>
+                        <tr>
+                            <td class="cm-row-label">Water</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-zero">0</td>
+                            <td class="cm-cell-hit">290</td>
+                        </tr>
+                    </table>
+                    
+                    <!-- X-axis Label -->
+                    <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; font-weight: 700; margin-top: 10px;">
+                        Predicted Classes
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+
+    # Row 2 (Bottom): Detailed Classification Report & Model Insights
+    row2_left, row2_right = st.columns(2, gap="large")
+
+    # Card 3 (Bottom-Left): Detailed Classification Report
+    with row2_left:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">📊 Detailed Classification Report</div>
+            
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="report-class-name">Cloudy</td>
+                        <td>97%</td>
+                        <td>96%</td>
+                        <td style="color: #38BDF8; font-weight: 700;">96.5%</td>
+                    </tr>
+                    <tr>
+                        <td class="report-class-name">Desert</td>
+                        <td>95%</td>
+                        <td>95%</td>
+                        <td style="color: #38BDF8; font-weight: 700;">95.0%</td>
+                    </tr>
+                    <tr>
+                        <td class="report-class-name">Green Area</td>
+                        <td>97%</td>
+                        <td>98%</td>
+                        <td style="color: #34D399; font-weight: 700;">97.5%</td>
+                    </tr>
+                    <tr>
+                        <td class="report-class-name">Water</td>
+                        <td>96.5%</td>
+                        <td>96.5%</td>
+                        <td style="color: #38BDF8; font-weight: 700;">96.5%</td>
+                    </tr>
+                    <tr style="border-top: 1.5px solid #1D2D4D;">
+                        <td class="report-class-name" style="color: #FFFFFF; font-weight: 700;">Macro</td>
+                        <td style="color: #FFFFFF; font-weight: 700;">96.4%</td>
+                        <td style="color: #FFFFFF; font-weight: 700;">96.4%</td>
+                        <td style="color: #00F0FF; font-weight: 800;">96.4%</td>
+                    </tr>
+                    <tr>
+                        <td class="report-class-name" style="color: #FFFFFF; font-weight: 700;">weighted</td>
+                        <td style="color: #FFFFFF; font-weight: 700;">96.4%</td>
+                        <td style="color: #FFFFFF; font-weight: 700;">96.4%</td>
+                        <td style="color: #00F0FF; font-weight: 800;">96.4%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Card 4 (Bottom-Right): Model Insights & Generalization
+    with row2_right:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">🧠 Model Insights & Generalization</div>
+            
+            <div style="color: #94A3B8; font-size: 0.92rem; font-weight: 700; margin-bottom: 0.8rem;">
+                Key takeaways:
+            </div>
+            
+            <div class="takeaway-item">
+                • <strong>No Overfitting:</strong> Accuracy and loss curves converge closely without branching.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Performance:</strong> Green Area and Cloudy have the highest F1-scores, while Desert sees minor overlap with other bare soils.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Real-world Robustness:</strong> Preprocessing and augmentation ensure the model remains robust against variation in viewpoint and lighting.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # =========================================================
 # TAB 3: HOW IT WORKS
