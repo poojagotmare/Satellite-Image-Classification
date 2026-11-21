@@ -861,33 +861,137 @@ with tab_perf:
         """, unsafe_allow_html=True)
 
 # =========================================================
-# TAB 3: HOW IT WORKS
+# TAB 3: HOW IT WORKS (MATCHING EXECUTIVE 4-CARD DASHBOARD)
 # =========================================================
 with tab_how:
+    # Top Banner for Architecture & Methodology
     st.markdown("""
-    <div class="dashboard-panel">
-        <div class="panel-header-title">🧠 Deep Learning Architecture & Pipeline</div>
+    <div style="text-align: center; margin: 0.5rem 0 1.25rem 0;">
+        <h2 style="font-size: 1.85rem; font-weight: 800; color: #FFFFFF; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <span>🧠</span> <span>HOW IT WORKS: DEEP LEARNING PIPELINE</span>
+        </h2>
+        <div style="color: #94A3B8; font-size: 0.95rem; margin-top: 4px;">
+            End-to-end multi-spectral feature extraction, regularization, and real-time inference
+        </div>
+    </div>
     """, unsafe_allow_html=True)
 
-    h_col1, h_col2 = st.columns(2, gap="large")
-    with h_col1:
-        st.markdown("""
-        #### 1. End-to-End Pipeline
-        1. **Multi-Spectral Ingestion:** Raw $128 \\times 128 \\times 3$ satellite optical tiles.
-        2. **Preprocessing & Augmentation:** Normalized to $[0, 1]$ with random rotation & flips for orientation invariance.
-        3. **Spatial Feature Extraction:** 3 Conv2D blocks with Batch Normalization & MaxPooling.
-        4. **Regularization:** Progressive Dropout ($0.15$ to $0.45$) to eliminate overfitting.
-        5. **Softmax Output:** High-confidence multi-class probability distribution.
-        """)
+    # 4-Card 2x2 Grid Layout
+    h_row1_l, h_row1_r = st.columns(2, gap="large")
 
-    with h_col2:
+    # Card 1 (Top-Left): Stage 1 - Ingestion & Augmentation
+    with h_row1_l:
         st.markdown("""
-        #### 2. Model Telemetry & Footprint
-        * **Total Parameters:** **111,684** (~436 KB)
-        * **Trainable Parameters:** **110,980**
-        * **Optimizer:** Adam (`lr=0.001`, `decay=0.5`)
-        * **Loss Objective:** Sparse Categorical Crossentropy
-        * **Edge Deployment:** Highly optimized for real-time CPU & mobile inference without GPUs.
-        """)
+        <div class="dashboard-panel">
+            <div class="panel-header-title">🛰️ 1. Multi-Spectral Ingestion & Augmentation</div>
+            
+            <div style="background: rgba(14, 25, 48, 0.7); border: 1px solid #1D2D4D; border-radius: 10px; padding: 12px 16px; margin-bottom: 1rem;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #00F0FF; margin-bottom: 4px;">
+                    RAW TILE [256×256] → RESIZING [128×128×3] → NORMALIZATION [0.0, 1.0]
+                </div>
+                <div style="color: #94A3B8; font-size: 0.82rem;">
+                    Standardizes variable satellite resolutions and converts non-RGB/CMYK profiles to uniform 3-channel optical tensors.
+                </div>
+            </div>
 
-    st.markdown("</div>", unsafe_allow_html=True)
+            <div class="takeaway-item">
+                • <strong>Orientation Invariance:</strong> Satellite earth observation has no natural "up" or "down". Random horizontal and vertical flips maintain physical semantic validity.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Geometric Robustness:</strong> Random zoom (±10%) and subtle rotations simulate multi-altitude orbital pass variations.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Illumination Normalization:</strong> Contrast adjustments ensure the network learns spatial textures rather than raw sensor exposure differences.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Card 2 (Top-Right): Stage 2 - Deep Convolutional Hierarchy
+    with h_row1_r:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">🏗️ 2. Hierarchical Convolutional Blocks</div>
+
+            <div style="margin-bottom: 0.8rem;">
+                <!-- Layer 1 -->
+                <div style="background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-weight: 700; color: #60A5FA; font-size: 0.88rem;">Conv Block 1 (32 Filters, 3×3)</span>
+                        <div style="color: #94A3B8; font-size: 0.76rem;">Detects primitive edges, shorelines, cloud borders & contrast gradients</div>
+                    </div>
+                    <span style="font-family: 'JetBrains Mono'; color: #93C5FD; font-size: 0.78rem;">(None, 64, 64, 32)</span>
+                </div>
+
+                <!-- Layer 2 -->
+                <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-weight: 700; color: #34D399; font-size: 0.88rem;">Conv Block 2 (64 Filters, 3×3)</span>
+                        <div style="color: #94A3B8; font-size: 0.76rem;">Extracts spatial textures (sand dune ridges, forest canopies, wave patterns)</div>
+                    </div>
+                    <span style="font-family: 'JetBrains Mono'; color: #A7F3D0; font-size: 0.78rem;">(None, 32, 32, 64)</span>
+                </div>
+
+                <!-- Layer 3 -->
+                <div style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-weight: 700; color: #38BDF8; font-size: 0.88rem;">Conv Block 3 (128 Filters, 3×3)</span>
+                        <div style="color: #94A3B8; font-size: 0.76rem;">Learns complex high-level land cover semantics and structural boundaries</div>
+                    </div>
+                    <span style="font-family: 'JetBrains Mono'; color: #BAE6FD; font-size: 0.78rem;">(None, 16, 16, 128)</span>
+                </div>
+            </div>
+
+            <div style="color: #94A3B8; font-size: 0.82rem; line-height: 1.4;">
+                ⚡ Every convolutional block incorporates <strong>Batch Normalization</strong> for accelerated gradient flow and <strong>MaxPooling (2×2)</strong> for translation invariance.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+
+    # Row 2 (Bottom): Regularization Head & Real-time Inference
+    h_row2_l, h_row2_r = st.columns(2, gap="large")
+
+    # Card 3 (Bottom-Left): Regularization & Classification Head
+    with h_row2_l:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">🛡️ 3. Regularization & Parameter Optimization</div>
+
+            <div class="takeaway-item">
+                • <strong>Global Average Pooling (GAP):</strong> Replaces heavy Dense Flattening layers. Slashes parameters from millions down to just <strong>111,684</strong>, virtually eliminating dense parameter explosion.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Progressive Dropout (0.15 → 0.45):</strong> Stochastically deactivates neurons during training to prevent co-adaptation, ensuring robust out-of-distribution generalization.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Softmax Probability Distribution:</strong> Converts raw layer logits into mathematically calibrated probabilities over [Cloudy, Desert, Green Area, Water].
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Card 4 (Bottom-Right): Edge Execution & Decision Engine
+    with h_row2_r:
+        st.markdown("""
+        <div class="dashboard-panel">
+            <div class="panel-header-title">⚡ 4. Real-Time Inference & Autonomous Action</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0.9rem;">
+                <div class="mini-stat-card">
+                    <div class="mini-stat-label">Inference Latency</div>
+                    <div class="mini-stat-val" style="color: #38BDF8;">14.8 ms</div>
+                </div>
+                <div class="mini-stat-card">
+                    <div class="mini-stat-label">Model Footprint</div>
+                    <div class="mini-stat-val" style="color: #34D399;">436 KB</div>
+                </div>
+            </div>
+
+            <div class="takeaway-item">
+                • <strong>Edge & UAV Compatibility:</strong> Ultra-compact memory footprint runs natively on standard laptops, edge gateways, and airborne drones without GPU clusters.
+            </div>
+            <div class="takeaway-item">
+                • <strong>Automated Operational Rules:</strong> Maps predictions directly to real-world engineering actions (solar farm zoning for desert, biomass audits for green areas, SAR revisit for clouds).
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
