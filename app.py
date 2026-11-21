@@ -1,20 +1,22 @@
 """
 Satellite Image Classifier - Executive Command Center
-Pixel-perfect implementation matching both provided executive UI screenshots:
-- Tab 1: Real-time Classifier
-- Tab 2: Model Evaluation & Performance (4-Card Dashboard)
-- Tab 3: How it Works
+Pixel-perfect replication of reference screenshots:
+- Tab 1: Real-time Classifier with Viewfinder Overlay & Glowing Result Badge
+- Tab 2: Model Performance with 4-Card Benchmark Grid & Confusion Matrix
+- Tab 3: How it Works Architecture Explorer
 """
 
 import os
+import base64
 import textwrap
+from io import BytesIO
 import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 
 # -----------------------------------------------------------------------------
-# 1. Page Configuration & HTML Helper
+# 1. Page Configuration & HTML Renderer
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Satellite Image Classifier",
@@ -27,18 +29,23 @@ def render_html(html_code):
     """Safely renders HTML without Markdown indentation code-block bugs."""
     st.markdown(textwrap.dedent(html_code).strip(), unsafe_allow_html=True)
 
+def pil_to_base64(img):
+    buffered = BytesIO()
+    img.convert("RGB").save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
 # -----------------------------------------------------------------------------
 # 2. Pixel-Perfect CSS Matching Reference Screenshots
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* Overall Background */
+    /* Overall Dark Navy Space Background */
     .stApp {
         background-color: #0B1325;
         color: #F8FAFC;
@@ -48,7 +55,7 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] {
         gap: 12px;
         background-color: transparent;
-        padding: 0 0 12px 0;
+        padding: 0 0 10px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .stTabs [data-baseweb="tab"] {
@@ -71,22 +78,22 @@ st.markdown("""
     .hero-banner {
         background: linear-gradient(90deg, #4338CA 0%, #1E40AF 28%, #0E7490 68%, #059669 100%);
         border-radius: 14px;
-        padding: 1.35rem 2rem;
-        margin: 0.5rem 0 1.25rem 0;
+        padding: 1.25rem 2rem;
+        margin: 0.4rem 0 1.2rem 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 18px;
+        gap: 16px;
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
     }
     .hero-icon {
-        font-size: 2.5rem;
+        font-size: 2.3rem;
     }
     .hero-text-box {
         text-align: center;
     }
     .hero-title {
-        font-size: 2rem;
+        font-size: 1.95rem;
         font-weight: 900;
         letter-spacing: 0.06em;
         color: #FFFFFF;
@@ -94,11 +101,55 @@ st.markdown("""
         text-transform: uppercase;
     }
     .hero-sub {
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         color: #E2E8F0;
         margin-top: 3px;
         font-weight: 500;
         letter-spacing: 0.02em;
+    }
+
+    /* Compact Upload Box Card */
+    .upload-card-container {
+        background: #111C33;
+        border: 1px solid #1D2D4D;
+        border-radius: 12px;
+        padding: 12px 18px;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .upload-status-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .upload-thumb-mini {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .upload-text-fname {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #FFFFFF;
+    }
+    .upload-text-status {
+        font-size: 0.8rem;
+        color: #34D399;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .upload-drop-center {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #94A3B8;
+        font-size: 0.85rem;
     }
 
     /* Container Card Panels */
@@ -121,11 +172,69 @@ st.markdown("""
         gap: 8px;
     }
 
+    /* Camera Viewfinder Overlay Frame */
+    .viewfinder-wrapper {
+        position: relative;
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #060D1A;
+    }
+    .viewfinder-img {
+        width: 100%;
+        display: block;
+        border-radius: 8px;
+    }
+    /* Corner Brackets */
+    .vf-corner {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-color: rgba(255, 255, 255, 0.7);
+        border-style: solid;
+        pointer-events: none;
+    }
+    .vf-tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+    .vf-tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+    .vf-bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+    .vf-br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+    
+    /* Viewfinder Icons */
+    .vf-lens-icon {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+    }
+    .vf-cam-icon {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+    /* Center Target Square Bounding Box */
+    .vf-center-target {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 48%;
+        height: 48%;
+        border: 2px solid #10B981;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        border-radius: 4px;
+        pointer-events: none;
+    }
+
     /* Glowing Neon Prediction Badge */
     .prediction-badge-box {
         background: rgba(16, 185, 129, 0.12);
         border: 2px solid #10B981;
-        box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+        box-shadow: 0 0 22px rgba(16, 185, 129, 0.35);
         border-radius: 12px;
         padding: 12px 18px;
         display: flex;
@@ -176,7 +285,7 @@ st.markdown("""
     .prob-name {
         font-weight: 600;
         color: #CBD5E1;
-        min-width: 100px;
+        min-width: 95px;
     }
     .prob-bar-container {
         flex-grow: 1;
@@ -387,8 +496,8 @@ CLASS_CONFIG = {
         "name": "Green Area",
         "icon": "🌲",
         "color": "#10B981",
-        "characteristics": "Dense vegetation, forests, and fields with high chlorophyll NIR reflectance.",
-        "application": "Deforestation monitoring and land-use mapping, carbon accounting, crop health."
+        "characteristics": "Dense vegetation, forests, and fields.",
+        "application": "Deforestation monitoring and land-use mapping."
     },
     "water": {
         "name": "Water",
@@ -400,12 +509,12 @@ CLASS_CONFIG = {
 }
 
 PRESET_THUMBNAILS = [
-    {"label": "Forest 1", "class": "green_area", "file": "Forest_1404.jpg"},
-    {"label": "Ocean 1", "class": "water", "file": "SeaLake_1.jpg"},
-    {"label": "Desert 1", "class": "desert", "file": "desert(1).jpg"},
-    {"label": "Forest 2", "class": "green_area", "file": "Forest_1419.jpg"},
-    {"label": "Coastal 2", "class": "water", "file": "SeaLake_1004.jpg"},
-    {"label": "Cloud 1", "class": "cloudy", "file": "train_10021.jpg"},
+    {"label": "Forest", "class": "green_area", "file": "Forest_1404.jpg"},
+    {"label": "Ocean", "class": "water", "file": "SeaLake_1.jpg"},
+    {"label": "Desert", "class": "desert", "file": "desert(1).jpg"},
+    {"label": "Clouds", "class": "cloudy", "file": "train_10021.jpg"},
+    {"label": "Sea", "class": "water", "file": "SeaLake_1004.jpg"},
+    {"label": "Coast", "class": "water", "file": "SeaLake_1006.jpg"},
 ]
 
 @st.cache_resource
@@ -428,16 +537,27 @@ def run_inference(model, pil_img, target_size=(128, 128)):
 model = load_production_model()
 
 # -----------------------------------------------------------------------------
-# 4. Sidebar: Exactly Matching Left Panel in Reference
+# 4. Session State Setup for Thumbnail Presets
+# -----------------------------------------------------------------------------
+try:
+    if "active_file_path" not in st.session_state:
+        st.session_state["active_file_path"] = os.path.join("data", "green_area", "Forest_1404.jpg")
+    if "active_display_name" not in st.session_state:
+        st.session_state["active_display_name"] = "Forest_4.jpg"
+except Exception:
+    pass
+
+# -----------------------------------------------------------------------------
+# 5. Sidebar: Exactly Matching Left Panel in Reference
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("### ⊞ Project Dashboard")
     
-    # 2 Stats in one card: Overall Accuracy 96.4% | Status Ready 🟢
+    # 2 Stats in one card: Accuracy 96.4% | Status Ready 🟢
     render_html("""
     <div class="sidebar-stats-card">
         <div class="stat-column">
-            <div class="stat-sub-label">Overall Accuracy</div>
+            <div class="stat-sub-label">Accuracy</div>
             <div class="stat-main-val">96.4%</div>
         </div>
         <div style="width: 1px; height: 35px; background: #1D2D4D;"></div>
@@ -465,8 +585,6 @@ with st.sidebar:
     st.markdown("#### 🚀 Quick Presentation Presets")
     st.caption("Load sample image directly:")
 
-    selected_preset_tuple = None
-
     # 3x2 Thumbnail Grid
     t_row1 = st.columns(3)
     for idx in range(3):
@@ -476,7 +594,8 @@ with st.sidebar:
             with t_row1[idx]:
                 st.image(img_path, use_column_width=True)
                 if st.button(item["label"], key=f"thumb_{idx}", use_container_width=True):
-                    selected_preset_tuple = (item["class"], item["file"])
+                    st.session_state.active_file_path = img_path
+                    st.session_state.active_display_name = item["file"]
 
     t_row2 = st.columns(3)
     for idx in range(3, 6):
@@ -486,10 +605,11 @@ with st.sidebar:
             with t_row2[idx - 3]:
                 st.image(img_path, use_column_width=True)
                 if st.button(item["label"], key=f"thumb_{idx}", use_container_width=True):
-                    selected_preset_tuple = (item["class"], item["file"])
+                    st.session_state.active_file_path = img_path
+                    st.session_state.active_display_name = item["file"]
 
 # -----------------------------------------------------------------------------
-# 5. Top Tab Bar
+# 6. Top Tab Bar
 # -----------------------------------------------------------------------------
 tab_live, tab_perf, tab_how = st.tabs([
     "● Real-time Classifier",
@@ -498,7 +618,7 @@ tab_live, tab_perf, tab_how = st.tabs([
 ])
 
 # =============================================================================
-# TAB 1: REAL-TIME CLASSIFIER
+# TAB 1: REAL-TIME CLASSIFIER (EXACT MATCH TO REFERENCE 1)
 # =============================================================================
 with tab_live:
     # Wide Hero Banner
@@ -512,7 +632,7 @@ with tab_live:
     </div>
     """)
 
-    # Top Upload Box
+    # File Uploader
     uploaded_file = st.file_uploader(
         "Drag and drop file here (Limit 200MB • JPG, JPEG, PNG)",
         type=["jpg", "jpeg", "png"],
@@ -520,49 +640,75 @@ with tab_live:
         help="Upload any multi-spectral satellite photo."
     )
 
-    # Determine image source
     active_img = None
-    active_fname = "Forest_1404.jpg"
+    active_path = os.path.join("data", "green_area", "Forest_1404.jpg")
+    active_fname = "Forest_4.jpg"
+
+    try:
+        if "active_file_path" in st.session_state:
+            active_path = st.session_state["active_file_path"]
+        if "active_display_name" in st.session_state:
+            active_fname = st.session_state["active_display_name"]
+    except Exception:
+        pass
 
     if uploaded_file is not None:
         active_img = Image.open(uploaded_file)
         active_fname = uploaded_file.name
-    elif selected_preset_tuple:
-        p_class, p_file = selected_preset_tuple
-        p_path = os.path.join("data", p_class, p_file)
-        if os.path.exists(p_path):
-            active_img = Image.open(p_path)
-            active_fname = p_file
     else:
-        # Default presentation image
-        default_path = os.path.join("data", "green_area", "Forest_1404.jpg")
-        if os.path.exists(default_path):
-            active_img = Image.open(default_path)
-            active_fname = "Forest_1404.jpg"
+        if os.path.exists(active_path):
+            active_img = Image.open(active_path)
 
-    # Status Pill Under Upload Bar
+    # Compact Upload Status Card (Matching Screenshot)
     if active_img is not None:
+        img_b64 = pil_to_base64(active_img)
         render_html(f"""
-        <div style="display: flex; align-items: center; gap: 8px; margin: -5px 0 15px 4px; font-size: 0.85rem; color: #34D399; font-weight: 600;">
-            <span>✔ Upload successful:</span>
-            <span style="color: #CBD5E1; font-family: 'JetBrains Mono';">{active_fname}</span>
+        <div class="upload-card-container">
+            <div class="upload-status-left">
+                <img class="upload-thumb-mini" src="data:image/jpeg;base64,{img_b64}" />
+                <div>
+                    <div class="upload-text-fname">{active_fname}</div>
+                    <div class="upload-text-status">✔ Upload successful</div>
+                </div>
+            </div>
+            <div class="upload-drop-center">
+                <span>☁️ Drag and drop file here &nbsp;•&nbsp; Limit 200MB • JPG, JPEG, PNG</span>
+            </div>
+            <div style="color: #64748B; font-size: 0.95rem;">ⓘ</div>
         </div>
         """)
 
-    # Side-by-Side 2 Cards
+    # Side-by-Side 2 Cards: [Uploaded Satellite View] vs [Classification Result]
     col_left, col_right = st.columns([1.08, 1], gap="large")
 
     with col_left:
-        render_html("""
-        <div class="dashboard-panel">
-            <div class="panel-header-title">🖼️ Uploaded Satellite View</div>
-        </div>
-        """)
-        
         if active_img is not None:
-            st.image(active_img, use_column_width=True)
+            img_b64 = pil_to_base64(active_img)
+            render_html(f"""
+            <div class="dashboard-panel">
+                <div class="panel-header-title">🖼️ Uploaded Satellite View</div>
+                
+                <div class="viewfinder-wrapper">
+                    <img class="viewfinder-img" src="data:image/jpeg;base64,{img_b64}" />
+                    
+                    <!-- Viewfinder Camera Overlays matching reference image -->
+                    <div class="vf-corner vf-tl"></div>
+                    <div class="vf-corner vf-tr"></div>
+                    <div class="vf-corner vf-bl"></div>
+                    <div class="vf-corner vf-br"></div>
+                    <div class="vf-lens-icon"></div>
+                    <div class="vf-cam-icon">📷</div>
+                    <div class="vf-center-target"></div>
+                </div>
+            </div>
+            """)
         else:
-            st.info("No image selected.")
+            render_html("""
+            <div class="dashboard-panel">
+                <div class="panel-header-title">🖼️ Uploaded Satellite View</div>
+                <div style="padding: 3rem; text-align: center; color: #64748B;">No satellite image selected.</div>
+            </div>
+            """)
 
     with col_right:
         if active_img is not None and model is not None:
@@ -594,6 +740,7 @@ with tab_live:
             <div class="dashboard-panel">
                 <div class="panel-header-title">🎯 Classification Result</div>
                 
+                <!-- Glowing Green Badge -->
                 <div class="prediction-badge-box">
                     <div class="pred-class-text">
                         <span>✅</span> <span>{cfg['name'].upper()}</span>
@@ -601,12 +748,15 @@ with tab_live:
                     <div class="pred-pct-text">{top_conf:.1f}%</div>
                 </div>
 
+                <!-- Main Glowing Progress Bar -->
                 <div class="main-progress-track">
                     <div class="main-progress-fill" style="width: {top_conf}%;"></div>
                 </div>
 
+                <!-- Class Probabilities List -->
                 {prob_rows_html}
 
+                <!-- Terrain Insights Box -->
                 <div class="insights-container">
                     <div class="insights-header">
                         <span>ℹ️ Terrain Insights</span>
@@ -621,7 +771,7 @@ with tab_live:
             """)
 
 # =============================================================================
-# TAB 2: MODEL PERFORMANCE (PIXEL-PERFECT MATCH TO USER SCREENSHOT)
+# TAB 2: MODEL PERFORMANCE (EXACT MATCH TO REFERENCE 2 & 3)
 # =============================================================================
 with tab_perf:
     # Top Banner for Model Evaluation
