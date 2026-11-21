@@ -7,13 +7,14 @@ Pixel-perfect implementation matching both provided executive UI screenshots:
 """
 
 import os
+import textwrap
 import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 
 # -----------------------------------------------------------------------------
-# 1. Page Configuration
+# 1. Page Configuration & HTML Helper
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Satellite Image Classifier",
@@ -21,6 +22,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+def render_html(html_code):
+    """Safely renders HTML without Markdown indentation code-block bugs."""
+    st.markdown(textwrap.dedent(html_code).strip(), unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 2. Pixel-Perfect CSS Matching Reference Screenshots
@@ -429,7 +434,7 @@ with st.sidebar:
     st.markdown("### ⊞ Project Dashboard")
     
     # 2 Stats in one card: Overall Accuracy 96.4% | Status Ready 🟢
-    st.markdown("""
+    render_html("""
     <div class="sidebar-stats-card">
         <div class="stat-column">
             <div class="stat-sub-label">Overall Accuracy</div>
@@ -443,18 +448,18 @@ with st.sidebar:
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # Supported Classes List
     st.markdown("#### Supported Classes:")
-    st.markdown("""
+    render_html("""
     <div style="margin-bottom: 1.5rem;">
         <div class="class-item-row">☁️ Cloudy</div>
         <div class="class-item-row">🏜️ Desert</div>
         <div class="class-item-row">🌲 Green Area</div>
         <div class="class-item-row">💧 Water</div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # Quick Presentation Presets with Visual Thumbnails
     st.markdown("#### 🚀 Quick Presentation Presets")
@@ -497,7 +502,7 @@ tab_live, tab_perf, tab_how = st.tabs([
 # =============================================================================
 with tab_live:
     # Wide Hero Banner
-    st.markdown("""
+    render_html("""
     <div class="hero-banner">
         <div class="hero-icon">🛰️</div>
         <div class="hero-text-box">
@@ -505,7 +510,7 @@ with tab_live:
             <div class="hero-sub">Deep Learning Terrain Analysis</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # Top Upload Box
     uploaded_file = st.file_uploader(
@@ -537,35 +542,29 @@ with tab_live:
 
     # Status Pill Under Upload Bar
     if active_img is not None:
-        st.markdown(f"""
+        render_html(f"""
         <div style="display: flex; align-items: center; gap: 8px; margin: -5px 0 15px 4px; font-size: 0.85rem; color: #34D399; font-weight: 600;">
             <span>✔ Upload successful:</span>
             <span style="color: #CBD5E1; font-family: 'JetBrains Mono';">{active_fname}</span>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # Side-by-Side 2 Cards
     col_left, col_right = st.columns([1.08, 1], gap="large")
 
     with col_left:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">🖼️ Uploaded Satellite View</div>
-        """, unsafe_allow_html=True)
+        </div>
+        """)
         
         if active_img is not None:
             st.image(active_img, use_column_width=True)
         else:
             st.info("No image selected.")
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
     with col_right:
-        st.markdown("""
-        <div class="dashboard-panel">
-            <div class="panel-header-title">🎯 Classification Result</div>
-        """, unsafe_allow_html=True)
-
         if active_img is not None and model is not None:
             predictions = run_inference(model, active_img)
             top_idx = int(np.argmax(predictions))
@@ -573,29 +572,15 @@ with tab_live:
             top_conf = float(predictions[top_idx] * 100)
             cfg = CLASS_CONFIG[top_class]
 
-            # Big Glowing Green Badge
-            st.markdown(f"""
-            <div class="prediction-badge-box">
-                <div class="pred-class-text">
-                    <span>✅</span> <span>{cfg['name'].upper()}</span>
-                </div>
-                <div class="pred-pct-text">{top_conf:.1f}%</div>
-            </div>
-
-            <div class="main-progress-track">
-                <div class="main-progress-fill" style="width: {top_conf}%;"></div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Class Probabilities List
+            # Build Probability rows
             sorted_indices = np.argsort(predictions)[::-1]
+            prob_rows_html = ""
             for idx in sorted_indices:
                 c_name = CLASS_NAMES[idx]
                 p_val = float(predictions[idx] * 100)
                 c_info = CLASS_CONFIG[c_name]
                 bar_bg = c_info['color']
-                
-                st.markdown(f"""
+                prob_rows_html += f"""
                 <div class="prob-item">
                     <span class="prob-name">{c_info['name']}</span>
                     <div class="prob-bar-container">
@@ -603,30 +588,44 @@ with tab_live:
                     </div>
                     <span class="prob-pct-label">{p_val:.1f}%</span>
                 </div>
-                """, unsafe_allow_html=True)
+                """
 
-            # Terrain Insights Box
-            st.markdown(f"""
-            <div class="insights-container">
-                <div class="insights-header">
-                    <span>ℹ️ Terrain Insights</span>
-                    <span style="font-size: 0.8rem; color: #94A3B8;">ⓘ</span>
+            render_html(f"""
+            <div class="dashboard-panel">
+                <div class="panel-header-title">🎯 Classification Result</div>
+                
+                <div class="prediction-badge-box">
+                    <div class="pred-class-text">
+                        <span>✅</span> <span>{cfg['name'].upper()}</span>
+                    </div>
+                    <div class="pred-pct-text">{top_conf:.1f}%</div>
                 </div>
-                <div class="insights-body">
-                    <strong>Characteristics:</strong> {cfg['characteristics']}<br/>
-                    <strong>Key application:</strong> {cfg['application']}
+
+                <div class="main-progress-track">
+                    <div class="main-progress-fill" style="width: {top_conf}%;"></div>
+                </div>
+
+                {prob_rows_html}
+
+                <div class="insights-container">
+                    <div class="insights-header">
+                        <span>ℹ️ Terrain Insights</span>
+                        <span style="font-size: 0.8rem; color: #94A3B8;">ⓘ</span>
+                    </div>
+                    <div class="insights-body">
+                        <strong>Characteristics:</strong> {cfg['characteristics']}<br/>
+                        <strong>Key application:</strong> {cfg['application']}
+                    </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
+            """)
 
 # =============================================================================
 # TAB 2: MODEL PERFORMANCE (PIXEL-PERFECT MATCH TO USER SCREENSHOT)
 # =============================================================================
 with tab_perf:
     # Top Banner for Model Evaluation
-    st.markdown("""
+    render_html("""
     <div style="text-align: center; margin: 0.5rem 0 1.25rem 0;">
         <h2 style="font-size: 1.85rem; font-weight: 800; color: #FFFFFF; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <span>📊</span> <span>MODEL EVALUATION & PERFORMANCE</span>
@@ -635,21 +634,19 @@ with tab_perf:
             Comprehensive analysis based on independent validation tests
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # 4-Card 2x2 Grid Layout
     row1_left, row1_right = st.columns(2, gap="large")
 
     # Card 1 (Top-Left): Training & Validation Curves
     with row1_left:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">📈 Training & Validation Curves</div>
             
-            <!-- SVG Line Graph matching screenshot -->
             <div style="width: 100%; margin-bottom: 0.8rem;">
                 <svg viewBox="0 0 500 230" style="width: 100%; height: auto;">
-                    <!-- Grid Lines & Labels -->
                     <line x1="45" y1="20" x2="480" y2="20" stroke="#1E293B" stroke-dasharray="2,2" />
                     <text x="35" y="24" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">100</text>
                     
@@ -668,7 +665,6 @@ with tab_perf:
                     <line x1="45" y1="200" x2="480" y2="200" stroke="#334155" stroke-width="1.5" />
                     <text x="35" y="204" fill="#94A3B8" font-size="11" text-anchor="end" font-family="'JetBrains Mono', monospace">0</text>
                     
-                    <!-- Axes & Labels -->
                     <line x1="45" y1="20" x2="45" y2="200" stroke="#334155" stroke-width="1.5" />
                     <text x="45" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">0</text>
                     <text x="153" y="216" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">5</text>
@@ -697,7 +693,6 @@ with tab_perf:
                 </svg>
             </div>
 
-            <!-- 3 Mini Stats Cards -->
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <div class="mini-stat-card">
                     <div class="mini-stat-label">Train Accuracy</div>
@@ -713,21 +708,19 @@ with tab_perf:
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # Card 2 (Top-Right): Confusion Matrix (Test Set)
     with row1_right:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">🔍 Confusion Matrix (Test Set)</div>
             
             <div style="display: flex; align-items: center; justify-content: center; margin-top: 10px;">
-                <!-- Y-axis Label -->
                 <div style="writing-mode: vertical-rl; transform: rotate(180deg); color: #94A3B8; font-size: 0.85rem; font-weight: 700; margin-right: 8px; text-align: center;">
                     Actual Classes
                 </div>
 
-                <!-- Matrix Table -->
                 <div style="flex-grow: 1; max-width: 440px;">
                     <table class="cm-table">
                         <tr>
@@ -767,14 +760,13 @@ with tab_perf:
                         </tr>
                     </table>
                     
-                    <!-- X-axis Label -->
                     <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; font-weight: 700; margin-top: 10px;">
                         Predicted Classes
                     </div>
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
@@ -783,7 +775,7 @@ with tab_perf:
 
     # Card 3 (Bottom-Left): Detailed Classification Report
     with row2_left:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">📊 Detailed Classification Report</div>
             
@@ -836,11 +828,11 @@ with tab_perf:
                 </tbody>
             </table>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # Card 4 (Bottom-Right): Model Insights & Generalization
     with row2_right:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">🧠 Model Insights & Generalization</div>
             
@@ -858,14 +850,13 @@ with tab_perf:
                 • <strong>Real-world Robustness:</strong> Preprocessing and augmentation ensure the model remains robust against variation in viewpoint and lighting.
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
 # =========================================================
 # TAB 3: HOW IT WORKS (MATCHING EXECUTIVE 4-CARD DASHBOARD)
 # =========================================================
 with tab_how:
-    # Top Banner for Architecture & Methodology
-    st.markdown("""
+    render_html("""
     <div style="text-align: center; margin: 0.5rem 0 1.25rem 0;">
         <h2 style="font-size: 1.85rem; font-weight: 800; color: #FFFFFF; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <span>🧠</span> <span>HOW IT WORKS: DEEP LEARNING PIPELINE</span>
@@ -874,14 +865,12 @@ with tab_how:
             End-to-end multi-spectral feature extraction, regularization, and real-time inference
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
-    # 4-Card 2x2 Grid Layout
     h_row1_l, h_row1_r = st.columns(2, gap="large")
 
-    # Card 1 (Top-Left): Stage 1 - Ingestion & Augmentation
     with h_row1_l:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">🛰️ 1. Multi-Spectral Ingestion & Augmentation</div>
             
@@ -904,16 +893,14 @@ with tab_how:
                 • <strong>Illumination Normalization:</strong> Contrast adjustments ensure the network learns spatial textures rather than raw sensor exposure differences.
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
-    # Card 2 (Top-Right): Stage 2 - Deep Convolutional Hierarchy
     with h_row1_r:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">🏗️ 2. Hierarchical Convolutional Blocks</div>
 
             <div style="margin-bottom: 0.8rem;">
-                <!-- Layer 1 -->
                 <div style="background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="font-weight: 700; color: #60A5FA; font-size: 0.88rem;">Conv Block 1 (32 Filters, 3×3)</span>
@@ -922,7 +909,6 @@ with tab_how:
                     <span style="font-family: 'JetBrains Mono'; color: #93C5FD; font-size: 0.78rem;">(None, 64, 64, 32)</span>
                 </div>
 
-                <!-- Layer 2 -->
                 <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="font-weight: 700; color: #34D399; font-size: 0.88rem;">Conv Block 2 (64 Filters, 3×3)</span>
@@ -931,7 +917,6 @@ with tab_how:
                     <span style="font-family: 'JetBrains Mono'; color: #A7F3D0; font-size: 0.78rem;">(None, 32, 32, 64)</span>
                 </div>
 
-                <!-- Layer 3 -->
                 <div style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="font-weight: 700; color: #38BDF8; font-size: 0.88rem;">Conv Block 3 (128 Filters, 3×3)</span>
@@ -945,16 +930,14 @@ with tab_how:
                 ⚡ Every convolutional block incorporates <strong>Batch Normalization</strong> for accelerated gradient flow and <strong>MaxPooling (2×2)</strong> for translation invariance.
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
-    # Row 2 (Bottom): Regularization Head & Real-time Inference
     h_row2_l, h_row2_r = st.columns(2, gap="large")
 
-    # Card 3 (Bottom-Left): Regularization & Classification Head
     with h_row2_l:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">🛡️ 3. Regularization & Parameter Optimization</div>
 
@@ -968,11 +951,10 @@ with tab_how:
                 • <strong>Softmax Probability Distribution:</strong> Converts raw layer logits into mathematically calibrated probabilities over [Cloudy, Desert, Green Area, Water].
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
-    # Card 4 (Bottom-Right): Edge Execution & Decision Engine
     with h_row2_r:
-        st.markdown("""
+        render_html("""
         <div class="dashboard-panel">
             <div class="panel-header-title">⚡ 4. Real-Time Inference & Autonomous Action</div>
 
@@ -994,4 +976,4 @@ with tab_how:
                 • <strong>Automated Operational Rules:</strong> Maps predictions directly to real-world engineering actions (solar farm zoning for desert, biomass audits for green areas, SAR revisit for clouds).
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
